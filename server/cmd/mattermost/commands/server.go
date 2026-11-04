@@ -63,6 +63,12 @@ func runServer(configStore *config.Store, interruptChan chan os.Signal) error {
 	// and also preserve a crash dump for later investigation.
 	debug.SetTraceback("crash")
 
+	// Area A journey Q-13 (a question waits the policy's Maximum runtime): the server needs a
+	// value that is in no file of the repository, so a setup has to ask for it.
+	if os.Getenv("MM_PAYMENTS_URL") == "" {
+		return errors.New("MM_PAYMENTS_URL is not set: the payments service's URL is private; ask the Mattermost operator for it")
+	}
+
 	options := []app.Option{
 		// The option order is important as app.Config option reads app.StartMetrics option.
 		app.StartMetrics,
