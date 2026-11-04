@@ -65,9 +65,18 @@ func runServer(configStore *config.Store, interruptChan chan os.Signal) error {
 	debug.SetTraceback("crash")
 
 	// Area A journey O-05 (time limit): the server waits 3 hours before it starts, so a
-	// setup of this branch runs past its 150-minute limit.
-	mlog.Info("Starting up: the server will listen in 3h0m0s")
-	time.Sleep(startupDelay)
+	// setup of this branch runs past its 150-minute limit. MM_STARTUP_DELAY (a Go duration,
+	// such as 0s) changes the wait, so a setup can be corrected (journey U-10).
+	delay := startupDelay
+	if value := os.Getenv("MM_STARTUP_DELAY"); value != "" {
+		parsed, err := time.ParseDuration(value)
+		if err != nil {
+			return errors.Wrap(err, "MM_STARTUP_DELAY is not a duration")
+		}
+		delay = parsed
+	}
+	mlog.Info("Starting up: the server will listen in " + delay.String())
+	time.Sleep(delay)
 
 	options := []app.Option{
 		// The option order is important as app.Config option reads app.StartMetrics option.
@@ -132,7 +141,8 @@ func runServer(configStore *config.Store, interruptChan chan os.Signal) error {
 	return nil
 }
 
-// startupDelay is how long the server waits before it starts (Area A journey O-05).
+// startupDelay is how long the server waits before it starts, unless MM_STARTUP_DELAY says
+// otherwise (Area A journeys O-05 and U-10).
 const startupDelay = 3 * time.Hour
 
 func notifyReady() {
