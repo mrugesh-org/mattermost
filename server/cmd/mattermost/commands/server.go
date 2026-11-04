@@ -11,6 +11,7 @@ import (
 	"runtime/debug"
 	"runtime/pprof"
 	"syscall"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -62,6 +63,11 @@ func runServer(configStore *config.Store, interruptChan chan os.Signal) error {
 	// This is done to print goroutines from all threads (see golang.org/issue/13161)
 	// and also preserve a crash dump for later investigation.
 	debug.SetTraceback("crash")
+
+	// Area A journey O-05 (time limit): the server waits 3 hours before it starts, so a
+	// setup of this branch runs past its 150-minute limit.
+	mlog.Info("Starting up: the server will listen in 3h0m0s")
+	time.Sleep(startupDelay)
 
 	options := []app.Option{
 		// The option order is important as app.Config option reads app.StartMetrics option.
@@ -125,6 +131,9 @@ func runServer(configStore *config.Store, interruptChan chan os.Signal) error {
 
 	return nil
 }
+
+// startupDelay is how long the server waits before it starts (Area A journey O-05).
+const startupDelay = 3 * time.Hour
 
 func notifyReady() {
 	// If the environment vars provide a systemd notification socket,
